@@ -241,8 +241,8 @@
 #pragma mark UITextFieldDelegate Method
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
 	int charcount = [textField.text length];
-
-	if(self.retry == YES){
+    
+	if(([string isEqualToString:@""] && charcount > 0) && [tempString length] > 0){
 		charcount-=1;
 	}
 	
@@ -256,7 +256,14 @@
 		field4.text = string;
 	} 
 	[self.tempString appendString:string];
-
+    
+    if(([string isEqualToString:@""] && charcount >= 0) && [tempString length] > 0){
+        NSRange r;
+        r.location = [self.tempString length]-1;
+        r.length = 1;
+        [self.tempString deleteCharactersInRange:r];
+	}
+    
 	//we've reached 4 chars
 	if(charcount == 3){
 		
@@ -265,23 +272,24 @@
 			if(passcode == nil){
 				//empty tempstring to passcode string
 				passcode = [self.tempString copy];
-
+                
 				self.tempString = [NSMutableString string];
-								
+                
 				//reset visible/hidden fields
 				[self resetFields];
 				
 				promptLabel.text = kCPLCDefaultConfirmTitle;
-				self.retry = YES;
+				return NO;
 			} else {
 				//check if confirm matches first
 				if([passcode isEqualToString:self.tempString]){
 					[delegate lockController:self didFinish:passcode];
 					[self dissmissView];
 					return NO;
-				//confirm passcode doesn't match
+                    //confirm passcode doesn't match
 				} else {
 					[self passcodeDidNotMatch];
+                    return NO;
 				}
 				
 			}
@@ -295,6 +303,7 @@
 				} else {
 					// delegate rejected passcode
 					[self passcodeDidNotMatch];
+                    return NO;
 				}
 			} else {
 				if([passcode isEqualToString:self.tempString]){
@@ -303,16 +312,13 @@
 					
 				} else {
 					[self passcodeDidNotMatch];
-					
+					return NO;
 				}	
 			}
 			
-			
-			
-			
 		}
 		
-	}	
+	}
 	
 	return YES;
 }
